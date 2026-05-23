@@ -1,9 +1,10 @@
 <template>
   <div>
-    <h2>Meine Decks</h2>
+    <h2>Meine Karten:</h2>
     <ul>
-      <li v-for="deck in decks" :key="deck.id">
-        <strong>{{ deck.name }}</strong>
+      <li v-for="cards in decks" :key="card.id">
+        <strong>{{ card.question }}</strong>
+        - {{card.answer}}
       </li>
     </ul>
   </div>
