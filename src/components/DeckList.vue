@@ -4,7 +4,6 @@
     <ul>
       <li v-for="deck in decks" :key="deck.id">
         <strong>{{ deck.name }}</strong>
-        – {{ deck.cards.length }} Karten
       </li>
     </ul>
   </div>
