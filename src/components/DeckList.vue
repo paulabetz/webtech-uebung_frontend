@@ -2,7 +2,7 @@
   <div>
     <h2>Meine Karten:</h2>
     <ul>
-      <li v-for="cards in decks" :key="card.id">
+      <li v-for="card in decks" :key="card.id">
         <strong>{{ card.question }}</strong>
         - {{card.answer}}
       </li>
