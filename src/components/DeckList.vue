@@ -17,7 +17,7 @@ const decks = ref<any[]>([])
 
 onMounted(async () => {
   const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
-  const response = await fetch(`${baseUrl}/api/decks`)
+  const response = await fetch(`${baseUrl}/cards`)
   decks.value = await response.json()
 })
 
