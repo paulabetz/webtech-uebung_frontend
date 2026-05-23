@@ -13,11 +13,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
-const decks = [
-  { id: 1, name: "Web-Tech Grundlagen", cards: [{}, {}] },
-  { id: 2, name: "Java Basics",         cards: [{}] },
-  { id: 3, name: "Datenbanken",         cards: [{}, {}, {}] },
-]
+const decks = ref<any[]>([])
 
 onMounted(async () => {
   const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
