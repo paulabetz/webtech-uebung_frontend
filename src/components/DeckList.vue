@@ -1,5 +1,10 @@
 <template>
   <div>
+    <div v-if="learnMode">
+      <LearnMode :cards="cards" @close="learnMode = false; loadCards()" @learned="loadCards()" />
+    </div>
+
+    <div v-else>
     <h2>Meine Karten:</h2>
 
     <!-- Karte erstellen -->
@@ -9,9 +14,10 @@
       <button @click="createCard">Karte erstellen</button>
     </div>
 
-    <!-- Suchfeld -->
+    <!-- Suchfeld & Lernen -->
     <div class="search-bar">
       <input v-model="searchTerm" placeholder="Karten durchsuchen..." />
+      <button class="learn-btn" @click="learnMode = true" :disabled="cards.length === 0">Lernen starten</button>
     </div>
 
     <ul>
@@ -40,11 +46,13 @@
         </template>
       </li>
     </ul>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import LearnMode from './LearnMode.vue'
 
 const cards = ref<any[]>([])
 const newQuestion = ref('')
@@ -53,6 +61,7 @@ const searchTerm = ref('')
 const editingId = ref<number | null>(null)
 const editQuestion = ref('')
 const editAnswer = ref('')
+const learnMode = ref(false)
 
 const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
 
@@ -166,5 +175,13 @@ button:hover {
 
 .delete-btn:hover {
   background-color: #ef9a9a;
+}
+
+.learn-btn {
+  background-color: #90caf9;
+}
+
+.learn-btn:hover {
+  background-color: #64b5f6;
 }
 </style>
