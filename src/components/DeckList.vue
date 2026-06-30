@@ -29,7 +29,7 @@
         <!-- Anzeigemodus -->
         <template v-if="editingId !== card.id">
           <strong>{{ card.question }}</strong> — {{ card.answer }}
-          <span v-if="card.learned"> ✓ Gelernt</span>
+          <span v-if="card.learned" class="learned-label"> ✓ Gelernt</span>
           <div class="actions">
             <button @click="toggleLearned(card)">
               {{ card.learned ? 'Als ungelernt markieren' : 'Als gelernt markieren' }}
@@ -142,16 +142,29 @@ const saveEdit = async (card: any) => {
 </script>
 
 <style scoped>
+h2 {
+  margin-bottom: 1rem;
+  color: #1a1a1a;
+}
+
 .create-form, .search-bar {
   margin-bottom: 1rem;
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 input {
   padding: 0.4rem 0.6rem;
-  border: 1px solid #ccc;
+  border: 1px solid #bbb;
   border-radius: 4px;
+  color: #1a1a1a;
+  background: #fff;
+}
+
+input:focus {
+  outline: 2px solid #90caf9;
+  border-color: #90caf9;
 }
 
 ul {
@@ -160,29 +173,39 @@ ul {
 }
 
 li {
-  padding: 0.75rem;
-  margin-bottom: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.6rem;
   border: 1px solid #ddd;
-  border-radius: 6px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+  color: #1a1a1a;
 }
 
 li.learned {
   background-color: #e8f5e9;
-  border-color: #a5d6a7;
+  border-color: #81c784;
+}
+
+.learned-label {
+  color: #2e7d32;
+  font-weight: 600;
 }
 
 .actions {
   margin-top: 0.5rem;
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 button {
-  padding: 0.3rem 0.7rem;
+  padding: 0.3rem 0.8rem;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   background-color: #e0e0e0;
+  color: #1a1a1a;
 }
 
 button:hover {
@@ -190,27 +213,31 @@ button:hover {
 }
 
 .delete-btn {
-  background-color: #ffcdd2;
+  background-color: #ef9a9a;
+  color: #7f0000;
 }
 
 .delete-btn:hover {
-  background-color: #ef9a9a;
+  background-color: #e57373;
 }
 
 .learn-btn {
-  background-color: #90caf9;
+  background-color: #42a5f5;
+  color: white;
 }
 
 .learn-btn:hover {
-  background-color: #64b5f6;
+  background-color: #1e88e5;
 }
 
 .filter-btn {
   background-color: #e0e0e0;
+  color: #1a1a1a;
 }
 
 .filter-btn.active {
-  background-color: #ffe082;
+  background-color: #ffd54f;
+  color: #4a3800;
 }
 
 .filter-btn:hover {
@@ -218,11 +245,12 @@ button:hover {
 }
 
 .reset-btn {
-  background-color: #ffcdd2;
+  background-color: #ef9a9a;
+  color: #7f0000;
 }
 
 .reset-btn:hover:not(:disabled) {
-  background-color: #ef9a9a;
+  background-color: #e57373;
 }
 
 button:disabled {

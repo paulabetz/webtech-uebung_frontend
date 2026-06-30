@@ -71,12 +71,13 @@ const markAndNext = async (markLearned: boolean) => {
 <style scoped>
 .learn-mode {
   max-width: 500px;
-  margin: 2rem auto;
+  margin: 0 auto;
 }
 
 .progress {
-  color: #888;
+  color: #444;
   margin-bottom: 0.5rem;
+  font-size: 0.9rem;
 }
 
 .card {
@@ -86,25 +87,28 @@ const markAndNext = async (markLearned: boolean) => {
   text-align: center;
   cursor: pointer;
   background: #e3f2fd;
-  min-height: 150px;
+  min-height: 160px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .question {
   font-size: 1.2rem;
   font-weight: bold;
+  color: #1a1a1a;
 }
 
 .answer {
   font-size: 1.1rem;
-  color: #1565c0;
+  color: #0d47a1;
+  font-weight: 500;
 }
 
 .hint {
-  color: #aaa;
+  color: #555;
   font-style: italic;
 }
 
@@ -121,6 +125,7 @@ button {
   border-radius: 4px;
   cursor: pointer;
   background-color: #e0e0e0;
+  color: #1a1a1a;
 }
 
 button:hover {
@@ -128,31 +133,38 @@ button:hover {
 }
 
 .learned-btn {
-  background-color: #a5d6a7;
+  background-color: #66bb6a;
+  color: white;
 }
 
 .learned-btn:hover {
-  background-color: #81c784;
+  background-color: #43a047;
 }
 
 .close-btn {
   display: block;
   margin: 1rem auto 0;
   background: none;
-  color: #888;
+  color: #444;
   text-decoration: underline;
 }
 
 .summary {
   text-align: center;
   padding: 2rem;
-  border: 2px solid #a5d6a7;
+  border: 2px solid #66bb6a;
   border-radius: 10px;
   background: #e8f5e9;
+  color: #1a1a1a;
 }
 
 .summary button {
   margin-top: 1rem;
-  background-color: #a5d6a7;
+  background-color: #66bb6a;
+  color: white;
+}
+
+.summary button:hover {
+  background-color: #43a047;
 }
 </style>

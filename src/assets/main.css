@@ -1,35 +1,18 @@
 @import './base.css';
 
+body {
+  background-image: url('/Schreibtisch-Bild.jpg');
+  background-color: #c8bfaf;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
+  max-width: 760px;
+  margin: 2rem auto;
   padding: 2rem;
-  font-weight: normal;
-}
-
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
-}
-
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
-}
-
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
 }
