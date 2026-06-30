@@ -14,10 +14,14 @@
       <button @click="createCard">Karte erstellen</button>
     </div>
 
-    <!-- Suchfeld & Lernen -->
+    <!-- Suchfeld & Filter & Aktionen -->
     <div class="search-bar">
       <input v-model="searchTerm" placeholder="Karten durchsuchen..." />
+      <button :class="['filter-btn', { active: showOnlyUnlearned }]" @click="showOnlyUnlearned = !showOnlyUnlearned">
+        {{ showOnlyUnlearned ? 'Alle anzeigen' : 'Nur ungelernte' }}
+      </button>
       <button class="learn-btn" @click="learnMode = true" :disabled="cards.length === 0">Lernen starten</button>
+      <button class="reset-btn" @click="resetAllLearned" :disabled="!cards.some(c => c.learned)">Fortschritt zurücksetzen</button>
     </div>
 
     <ul>
@@ -62,14 +66,18 @@ const editingId = ref<number | null>(null)
 const editQuestion = ref('')
 const editAnswer = ref('')
 const learnMode = ref(false)
+const showOnlyUnlearned = ref(false)
 
 const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
 
 const filteredCards = computed(() =>
-  cards.value.filter(c =>
-    c.question.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-    c.answer.toLowerCase().includes(searchTerm.value.toLowerCase())
-  )
+  cards.value.filter(c => {
+    const matchesSearch =
+      c.question.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+      c.answer.toLowerCase().includes(searchTerm.value.toLowerCase())
+    const matchesFilter = showOnlyUnlearned.value ? !c.learned : true
+    return matchesSearch && matchesFilter
+  })
 )
 
 const loadCards = async () => {
@@ -108,6 +116,18 @@ const startEdit = (card: any) => {
   editingId.value = card.id
   editQuestion.value = card.question
   editAnswer.value = card.answer
+}
+
+const resetAllLearned = async () => {
+  const learnedCards = cards.value.filter(c => c.learned)
+  await Promise.all(learnedCards.map(card =>
+    fetch(`${baseUrl}/cards/${card.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: card.question, answer: card.answer, learned: false })
+    })
+  ))
+  await loadCards()
 }
 
 const saveEdit = async (card: any) => {
@@ -183,5 +203,30 @@ button:hover {
 
 .learn-btn:hover {
   background-color: #64b5f6;
+}
+
+.filter-btn {
+  background-color: #e0e0e0;
+}
+
+.filter-btn.active {
+  background-color: #ffe082;
+}
+
+.filter-btn:hover {
+  background-color: #bdbdbd;
+}
+
+.reset-btn {
+  background-color: #ffcdd2;
+}
+
+.reset-btn:hover:not(:disabled) {
+  background-color: #ef9a9a;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 </style>
