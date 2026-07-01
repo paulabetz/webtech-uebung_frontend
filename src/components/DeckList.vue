@@ -102,15 +102,19 @@ const deckName = (deckId: number) => {
   return decks.value.find(d => d.id === deckId)?.name ?? ''
 }
 
+// Feste, id-basierte Sortierung: verhindert, dass Karten ihre Reihenfolge
+// wechseln, wenn das Backend sie nach einem Update in anderer Reihenfolge liefert.
 const filteredCards = computed(() =>
-  cards.value.filter(c => {
-    const matchesSearch =
-      c.question.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-      c.answer.toLowerCase().includes(searchTerm.value.toLowerCase())
-    const matchesFilter = showOnlyUnlearned.value ? !c.learned : true
-    const matchesDeck = selectedDeckId.value !== null ? c.deckId === selectedDeckId.value : true
-    return matchesSearch && matchesFilter && matchesDeck
-  })
+  cards.value
+    .filter(c => {
+      const matchesSearch =
+        c.question.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+        c.answer.toLowerCase().includes(searchTerm.value.toLowerCase())
+      const matchesFilter = showOnlyUnlearned.value ? !c.learned : true
+      const matchesDeck = selectedDeckId.value !== null ? c.deckId === selectedDeckId.value : true
+      return matchesSearch && matchesFilter && matchesDeck
+    })
+    .sort((a, b) => a.id - b.id)
 )
 
 const loadCards = async () => {

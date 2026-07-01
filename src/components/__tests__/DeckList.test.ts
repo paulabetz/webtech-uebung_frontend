@@ -11,13 +11,24 @@ const mockDecks = [
   { id: 1, name: 'Programmierung' }
 ]
 
+let cardsState: typeof mockCards = []
+
 beforeEach(() => {
+  cardsState = JSON.parse(JSON.stringify(mockCards))
   vi.stubGlobal('fetch', vi.fn((url: string, options?: any) => {
     if (url.includes('/decks')) {
       return Promise.resolve({ json: () => Promise.resolve(mockDecks) })
     }
+    if (options?.method === 'PUT') {
+      const id = Number(url.split('/').pop())
+      const body = JSON.parse(options.body)
+      cardsState = cardsState.map(c => (c.id === id ? { ...c, ...body } : c))
+      // Simuliert ein Backend, das nach einem Update eine andere Reihenfolge liefert
+      cardsState = [...cardsState].sort((a, b) => Number(a.learned) - Number(b.learned))
+      return Promise.resolve({ json: () => Promise.resolve({}) })
+    }
     if (!options || options.method === 'GET' || !options.method) {
-      return Promise.resolve({ json: () => Promise.resolve(mockCards) })
+      return Promise.resolve({ json: () => Promise.resolve(cardsState) })
     }
     return Promise.resolve({ json: () => Promise.resolve({}) })
   }))
@@ -100,5 +111,19 @@ describe('DeckList', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('Was ist Vue?')
     expect(wrapper.text()).toContain('Was ist Java?')
+  })
+
+  it('Karten behalten nach dem Markieren als gelernt ihre feste Reihenfolge', async () => {
+    const wrapper = mount(DeckList)
+    await flushPromises()
+
+    const questionsBefore = wrapper.findAll('li strong').map(el => el.text())
+
+    const toggleBtn = wrapper.findAll('button').find(b => b.text().includes('Als gelernt markieren'))
+    await toggleBtn?.trigger('click')
+    await flushPromises()
+
+    const questionsAfter = wrapper.findAll('li strong').map(el => el.text())
+    expect(questionsAfter).toEqual(questionsBefore)
   })
 })
