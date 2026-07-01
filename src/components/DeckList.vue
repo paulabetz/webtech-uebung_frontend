@@ -35,7 +35,8 @@
       <button :class="['filter-btn', { active: showOnlyUnlearned }]" @click="showOnlyUnlearned = !showOnlyUnlearned">
         {{ showOnlyUnlearned ? 'Alle anzeigen' : 'Nur ungelernte' }}
       </button>
-      <button class="learn-btn" @click="learnMode = true" :disabled="filteredCards.length === 0">Lernen starten</button>
+      <br />
+      <button class="learn-btn" @click="learnMode = true" :disabled="filteredCards.length === 0">🚀 Lernen starten</button>
       <button class="reset-btn" @click="resetAllLearned" :disabled="!cards.some(c => c.learned)">Fortschritt zurücksetzen</button>
     </div>
 
@@ -288,6 +289,8 @@ button:hover {
 .learn-btn {
   background-color: #42a5f5;
   color: white;
+  font-size: 1rem;
+  padding: 0.5rem 1.2rem;
 }
 
 .learn-btn:hover {
