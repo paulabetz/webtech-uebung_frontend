@@ -11,29 +11,53 @@ const mockDecks = [
   { id: 1, name: 'Programmierung' }
 ]
 
+let cardsState: typeof mockCards = []
+
 beforeEach(() => {
+  cardsState = JSON.parse(JSON.stringify(mockCards))
   vi.stubGlobal('fetch', vi.fn((url: string, options?: any) => {
     if (url.includes('/decks')) {
       return Promise.resolve({ json: () => Promise.resolve(mockDecks) })
     }
+    if (options?.method === 'PUT') {
+      const id = Number(url.split('/').pop())
+      const body = JSON.parse(options.body)
+      cardsState = cardsState.map(c => (c.id === id ? { ...c, ...body } : c))
+      // Simuliert ein Backend, das nach einem Update eine andere Reihenfolge liefert
+      cardsState = [...cardsState].sort((a, b) => Number(a.learned) - Number(b.learned))
+      return Promise.resolve({ json: () => Promise.resolve({}) })
+    }
     if (!options || options.method === 'GET' || !options.method) {
-      return Promise.resolve({ json: () => Promise.resolve(mockCards) })
+      return Promise.resolve({ json: () => Promise.resolve(cardsState) })
     }
     return Promise.resolve({ json: () => Promise.resolve({}) })
   }))
 })
 
+const openManageTab = async (wrapper: any) => {
+  const manageBtn = wrapper.findAll('button').find((b: any) => b.text() === 'Kartenverwaltung')
+  await manageBtn?.trigger('click')
+}
+
 describe('DeckList', () => {
-  it('zeigt alle Karten an', async () => {
+  it('zeigt standardmäßig den Lernen-Tab an', async () => {
     const wrapper = mount(DeckList)
     await flushPromises()
+    expect(wrapper.find('.learn-btn').exists()).toBe(true)
+  })
+
+  it('zeigt alle Karten in der Kartenverwaltung an', async () => {
+    const wrapper = mount(DeckList)
+    await flushPromises()
+    await openManageTab(wrapper)
     expect(wrapper.text()).toContain('Was ist Vue?')
     expect(wrapper.text()).toContain('Was ist Java?')
   })
 
-  it('filtert Karten per Suchfeld', async () => {
+  it('filtert Karten per Suchfeld in der Kartenverwaltung', async () => {
     const wrapper = mount(DeckList)
     await flushPromises()
+    await openManageTab(wrapper)
     await wrapper.find('input[placeholder="Karten durchsuchen..."]').setValue('Vue')
     expect(wrapper.text()).toContain('Was ist Vue?')
     expect(wrapper.text()).not.toContain('Was ist Java?')
@@ -42,6 +66,7 @@ describe('DeckList', () => {
   it('zeigt gelernte Karten mit Häkchen an', async () => {
     const wrapper = mount(DeckList)
     await flushPromises()
+    await openManageTab(wrapper)
     expect(wrapper.text()).toContain('✓ Gelernt')
   })
 
@@ -55,25 +80,25 @@ describe('DeckList', () => {
   it('zeigt Fehlermeldung bei leeren Feldern', async () => {
     const wrapper = mount(DeckList)
     await flushPromises()
-    await wrapper.find('button[onClick*="createCard"], button').trigger('click')
-    // Direkt createCard ohne Eingabe aufrufen
+    await openManageTab(wrapper)
     const createBtn = wrapper.findAll('button').find(b => b.text() === 'Karte erstellen')
     await createBtn?.trigger('click')
     expect(wrapper.text()).toContain('dürfen nicht leer sein')
   })
 
-  it('filtert nur ungelernte Karten', async () => {
+  it('nur ungelernte Karten werden in die Lernsession übernommen', async () => {
     const wrapper = mount(DeckList)
     await flushPromises()
     const filterBtn = wrapper.findAll('button').find(b => b.text().includes('Nur ungelernte'))
     await filterBtn?.trigger('click')
-    expect(wrapper.text()).toContain('Was ist Vue?')
-    expect(wrapper.text()).not.toContain('Was ist Java?')
+    await wrapper.find('.learn-btn').trigger('click')
+    expect(wrapper.text()).toContain('Karte 1 / 1')
   })
 
-  it('zeigt Deck-Name bei Karte an', async () => {
+  it('zeigt Deck-Name bei Karte in der Kartenverwaltung an', async () => {
     const wrapper = mount(DeckList)
     await flushPromises()
+    await openManageTab(wrapper)
     expect(wrapper.text()).toContain('Programmierung')
   })
 
@@ -91,14 +116,23 @@ describe('DeckList', () => {
   it('Suchfeld ist initial leer', async () => {
     const wrapper = mount(DeckList)
     await flushPromises()
+    await openManageTab(wrapper)
     const searchInput = wrapper.find('input[placeholder="Karten durchsuchen..."]')
     expect((searchInput.element as HTMLInputElement).value).toBe('')
   })
 
-  it('zeigt beide Karten wenn Suchfeld leer ist', async () => {
+  it('Karten behalten nach dem Markieren als gelernt ihre feste Reihenfolge', async () => {
     const wrapper = mount(DeckList)
     await flushPromises()
-    expect(wrapper.text()).toContain('Was ist Vue?')
-    expect(wrapper.text()).toContain('Was ist Java?')
+    await openManageTab(wrapper)
+
+    const questionsBefore = wrapper.findAll('li strong').map(el => el.text())
+
+    const toggleBtn = wrapper.findAll('button').find(b => b.text().includes('Als gelernt markieren'))
+    await toggleBtn?.trigger('click')
+    await flushPromises()
+
+    const questionsAfter = wrapper.findAll('li strong').map(el => el.text())
+    expect(questionsAfter).toEqual(questionsBefore)
   })
 })
