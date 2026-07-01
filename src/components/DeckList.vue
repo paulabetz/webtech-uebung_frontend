@@ -13,6 +13,7 @@
       <input v-model="newAnswer" placeholder="Antwort" />
       <button @click="createCard">Karte erstellen</button>
     </div>
+    <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
 
     <!-- Suchfeld & Filter & Aktionen -->
     <div class="search-bar">
@@ -66,6 +67,7 @@ const editingId = ref<number | null>(null)
 const editQuestion = ref('')
 const editAnswer = ref('')
 const learnMode = ref(false)
+const errorMessage = ref('')
 const showOnlyUnlearned = ref(false)
 
 const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
@@ -88,6 +90,11 @@ const loadCards = async () => {
 onMounted(loadCards)
 
 const createCard = async () => {
+  errorMessage.value = ''
+  if (!newQuestion.value.trim() || !newAnswer.value.trim()) {
+    errorMessage.value = 'Frage und Antwort dürfen nicht leer sein.'
+    return
+  }
   await fetch(`${baseUrl}/cards`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -256,5 +263,13 @@ button:hover {
 button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.error {
+  color: #c62828;
+  background-color: #ffcdd2;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
 }
 </style>
