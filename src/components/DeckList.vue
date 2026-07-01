@@ -7,10 +7,20 @@
     <div v-else>
     <h2>Meine Karten:</h2>
 
+    <!-- Deck erstellen -->
+    <div class="create-form">
+      <input v-model="newDeckName" placeholder="Neues Deck (Name)" />
+      <button @click="createDeck">Deck erstellen</button>
+    </div>
+
     <!-- Karte erstellen -->
     <div class="create-form">
       <input v-model="newQuestion" placeholder="Frage" />
       <input v-model="newAnswer" placeholder="Antwort" />
+      <select v-model="newCardDeckId">
+        <option :value="null">Kein Deck</option>
+        <option v-for="deck in decks" :key="deck.id" :value="deck.id">{{ deck.name }}</option>
+      </select>
       <button @click="createCard">Karte erstellen</button>
     </div>
     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
@@ -18,10 +28,14 @@
     <!-- Suchfeld & Filter & Aktionen -->
     <div class="search-bar">
       <input v-model="searchTerm" placeholder="Karten durchsuchen..." />
+      <select v-model="selectedDeckId">
+        <option :value="null">Alle Decks</option>
+        <option v-for="deck in decks" :key="deck.id" :value="deck.id">{{ deck.name }}</option>
+      </select>
       <button :class="['filter-btn', { active: showOnlyUnlearned }]" @click="showOnlyUnlearned = !showOnlyUnlearned">
         {{ showOnlyUnlearned ? 'Alle anzeigen' : 'Nur ungelernte' }}
       </button>
-      <button class="learn-btn" @click="learnMode = true" :disabled="cards.length === 0">Lernen starten</button>
+      <button class="learn-btn" @click="learnMode = true" :disabled="filteredCards.length === 0">Lernen starten</button>
       <button class="reset-btn" @click="resetAllLearned" :disabled="!cards.some(c => c.learned)">Fortschritt zurücksetzen</button>
     </div>
 
@@ -31,6 +45,7 @@
         <template v-if="editingId !== card.id">
           <strong>{{ card.question }}</strong> — {{ card.answer }}
           <span v-if="card.learned" class="learned-label"> ✓ Gelernt</span>
+          <span v-if="card.deckId" class="deck-label"> 📂 {{ deckName(card.deckId) }}</span>
           <div class="actions">
             <button @click="toggleLearned(card)">
               {{ card.learned ? 'Als ungelernt markieren' : 'Als gelernt markieren' }}
@@ -44,6 +59,10 @@
         <template v-else>
           <input v-model="editQuestion" placeholder="Frage" />
           <input v-model="editAnswer" placeholder="Antwort" />
+          <select v-model="editDeckId">
+            <option :value="null">Kein Deck</option>
+            <option v-for="deck in decks" :key="deck.id" :value="deck.id">{{ deck.name }}</option>
+          </select>
           <div class="actions">
             <button @click="saveEdit(card)">Speichern</button>
             <button @click="editingId = null">Abbrechen</button>
@@ -70,7 +89,17 @@ const learnMode = ref(false)
 const errorMessage = ref('')
 const showOnlyUnlearned = ref(false)
 
+const decks = ref<any[]>([])
+const newCardDeckId = ref<number | null>(null)
+const newDeckName = ref('')
+const selectedDeckId = ref<number | null>(null)
+const editDeckId = ref<number | null>(null)
+
 const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
+
+const deckName = (deckId: number) => {
+  return decks.value.find(d => d.id === deckId)?.name ?? ''
+}
 
 const filteredCards = computed(() =>
   cards.value.filter(c => {
@@ -78,7 +107,8 @@ const filteredCards = computed(() =>
       c.question.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
       c.answer.toLowerCase().includes(searchTerm.value.toLowerCase())
     const matchesFilter = showOnlyUnlearned.value ? !c.learned : true
-    return matchesSearch && matchesFilter
+    const matchesDeck = selectedDeckId.value !== null ? c.deckId === selectedDeckId.value : true
+    return matchesSearch && matchesFilter && matchesDeck
   })
 )
 
@@ -87,7 +117,26 @@ const loadCards = async () => {
   cards.value = await response.json()
 }
 
-onMounted(loadCards)
+const loadDecks = async () => {
+  const response = await fetch(`${baseUrl}/decks`)
+  decks.value = await response.json()
+}
+
+onMounted(async () => {
+  await loadCards()
+  await loadDecks()
+})
+
+const createDeck = async () => {
+  if (!newDeckName.value.trim()) return
+  await fetch(`${baseUrl}/decks`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: newDeckName.value })
+  })
+  newDeckName.value = ''
+  await loadDecks()
+}
 
 const createCard = async () => {
   errorMessage.value = ''
@@ -98,10 +147,11 @@ const createCard = async () => {
   await fetch(`${baseUrl}/cards`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question: newQuestion.value, answer: newAnswer.value, learned: false })
+    body: JSON.stringify({ question: newQuestion.value, answer: newAnswer.value, learned: false, deckId: newCardDeckId.value })
   })
   newQuestion.value = ''
   newAnswer.value = ''
+  newCardDeckId.value = null
   await loadCards()
 }
 
@@ -114,7 +164,7 @@ const toggleLearned = async (card: any) => {
   await fetch(`${baseUrl}/cards/${card.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question: card.question, answer: card.answer, learned: !card.learned })
+    body: JSON.stringify({ question: card.question, answer: card.answer, learned: !card.learned, deckId: card.deckId })
   })
   await loadCards()
 }
@@ -123,6 +173,7 @@ const startEdit = (card: any) => {
   editingId.value = card.id
   editQuestion.value = card.question
   editAnswer.value = card.answer
+  editDeckId.value = card.deckId ?? null
 }
 
 const resetAllLearned = async () => {
@@ -131,7 +182,7 @@ const resetAllLearned = async () => {
     fetch(`${baseUrl}/cards/${card.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: card.question, answer: card.answer, learned: false })
+      body: JSON.stringify({ question: card.question, answer: card.answer, learned: false, deckId: card.deckId })
     })
   ))
   await loadCards()
@@ -141,7 +192,7 @@ const saveEdit = async (card: any) => {
   await fetch(`${baseUrl}/cards/${card.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question: editQuestion.value, answer: editAnswer.value, learned: card.learned })
+    body: JSON.stringify({ question: editQuestion.value, answer: editAnswer.value, learned: card.learned, deckId: editDeckId.value })
   })
   editingId.value = null
   await loadCards()
@@ -161,7 +212,7 @@ h2 {
   flex-wrap: wrap;
 }
 
-input {
+input, select {
   padding: 0.4rem 0.6rem;
   border: 1px solid #bbb;
   border-radius: 4px;
@@ -169,7 +220,7 @@ input {
   background: #fff;
 }
 
-input:focus {
+input:focus, select:focus {
   outline: 2px solid #90caf9;
   border-color: #90caf9;
 }
@@ -197,6 +248,12 @@ li.learned {
 .learned-label {
   color: #2e7d32;
   font-weight: 600;
+}
+
+.deck-label {
+  color: #555;
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
 }
 
 .actions {
