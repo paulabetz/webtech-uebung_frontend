@@ -4,13 +4,13 @@
     <!-- Zusammenfassung am Ende -->
     <div v-if="finished" class="summary">
       <h3>Lernsession beendet!</h3>
-      <p>{{ learnedCount }} von {{ cards.length }} Karten als gelernt markiert.</p>
+      <p>{{ learnedCount }} von {{ localCards.length }} Karten als gelernt markiert.</p>
       <button @click="$emit('close')">Zurück zur Übersicht</button>
     </div>
 
     <!-- Lernkarte -->
     <div v-else class="card-box">
-      <p class="progress">Karte {{ currentIndex + 1 }} / {{ cards.length }}</p>
+      <p class="progress">Karte {{ currentIndex + 1 }} / {{ localCards.length }}</p>
 
       <div class="card" @click="showAnswer = true">
         <p class="question">{{ currentCard.question }}</p>
@@ -38,6 +38,9 @@ import { ref, computed } from 'vue'
 const props = defineProps<{ cards: any[] }>()
 const emit = defineEmits(['close', 'learned'])
 
+// Lokale Kopie — ändert sich nicht während der Session
+const localCards = ref([...props.cards])
+
 const currentIndex = ref(0)
 const showAnswer = ref(false)
 const learnedCount = ref(0)
@@ -45,7 +48,7 @@ const finished = ref(false)
 
 const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
 
-const currentCard = computed(() => props.cards[currentIndex.value])
+const currentCard = computed(() => localCards.value[currentIndex.value])
 
 const goBack = () => {
   if (currentIndex.value > 0) {
@@ -69,7 +72,7 @@ const markAndNext = async (markLearned: boolean) => {
     emit('learned')
   }
 
-  if (currentIndex.value + 1 >= props.cards.length) {
+  if (currentIndex.value + 1 >= localCards.value.length) {
     finished.value = true
   } else {
     currentIndex.value++
