@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="learnMode">
-      <LearnMode :cards="cards" @close="learnMode = false; loadCards()" @learned="loadCards()" />
+      <LearnMode :cards="filteredCards" @close="learnMode = false; loadCards()" @learned="loadCards()" />
     </div>
 
     <div v-else>

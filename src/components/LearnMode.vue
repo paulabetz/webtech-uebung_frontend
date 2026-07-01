@@ -23,7 +23,10 @@
         <button @click="markAndNext(false)">Weiter</button>
       </div>
 
-      <button class="close-btn" @click="$emit('close')">Abbrechen</button>
+      <div class="nav-actions">
+        <button class="back-btn" @click="goBack" :disabled="currentIndex === 0">← Zurück</button>
+        <button class="close-btn" @click="$emit('close')">Abbrechen</button>
+      </div>
     </div>
 
   </div>
@@ -43,6 +46,13 @@ const finished = ref(false)
 const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
 
 const currentCard = computed(() => props.cards[currentIndex.value])
+
+const goBack = () => {
+  if (currentIndex.value > 0) {
+    currentIndex.value--
+    showAnswer.value = false
+  }
+}
 
 const markAndNext = async (markLearned: boolean) => {
   if (markLearned) {
@@ -141,9 +151,25 @@ button:hover {
   background-color: #43a047;
 }
 
+.nav-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.back-btn {
+  background: none;
+  color: #444;
+  text-decoration: underline;
+}
+
+.back-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .close-btn {
-  display: block;
-  margin: 1rem auto 0;
   background: none;
   color: #444;
   text-decoration: underline;
