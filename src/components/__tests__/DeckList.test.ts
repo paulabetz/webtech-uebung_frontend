@@ -3,12 +3,19 @@ import { mount, flushPromises } from '@vue/test-utils'
 import DeckList from '../DeckList.vue'
 
 const mockCards = [
-  { id: 1, question: 'Was ist Vue?', answer: 'Ein JS-Framework', learned: false },
-  { id: 2, question: 'Was ist Java?', answer: 'Eine Programmiersprache', learned: true },
+  { id: 1, question: 'Was ist Vue?', answer: 'Ein JS-Framework', learned: false, deckId: null },
+  { id: 2, question: 'Was ist Java?', answer: 'Eine Programmiersprache', learned: true, deckId: 1 },
+]
+
+const mockDecks = [
+  { id: 1, name: 'Programmierung' }
 ]
 
 beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn((url: string, options?: any) => {
+    if (url.includes('/decks')) {
+      return Promise.resolve({ json: () => Promise.resolve(mockDecks) })
+    }
     if (!options || options.method === 'GET' || !options.method) {
       return Promise.resolve({ json: () => Promise.resolve(mockCards) })
     }
@@ -43,5 +50,55 @@ describe('DeckList', () => {
     await flushPromises()
     await wrapper.find('.learn-btn').trigger('click')
     expect(wrapper.text()).toContain('Karte 1 /')
+  })
+
+  it('zeigt Fehlermeldung bei leeren Feldern', async () => {
+    const wrapper = mount(DeckList)
+    await flushPromises()
+    await wrapper.find('button[onClick*="createCard"], button').trigger('click')
+    // Direkt createCard ohne Eingabe aufrufen
+    const createBtn = wrapper.findAll('button').find(b => b.text() === 'Karte erstellen')
+    await createBtn?.trigger('click')
+    expect(wrapper.text()).toContain('dürfen nicht leer sein')
+  })
+
+  it('filtert nur ungelernte Karten', async () => {
+    const wrapper = mount(DeckList)
+    await flushPromises()
+    const filterBtn = wrapper.findAll('button').find(b => b.text().includes('Nur ungelernte'))
+    await filterBtn?.trigger('click')
+    expect(wrapper.text()).toContain('Was ist Vue?')
+    expect(wrapper.text()).not.toContain('Was ist Java?')
+  })
+
+  it('zeigt Deck-Name bei Karte an', async () => {
+    const wrapper = mount(DeckList)
+    await flushPromises()
+    expect(wrapper.text()).toContain('Programmierung')
+  })
+
+  it('Lernen-Button ist deaktiviert wenn keine Karten vorhanden', async () => {
+    vi.stubGlobal('fetch', vi.fn((url: string) => {
+      if (url.includes('/decks')) return Promise.resolve({ json: () => Promise.resolve([]) })
+      return Promise.resolve({ json: () => Promise.resolve([]) })
+    }))
+    const wrapper = mount(DeckList)
+    await flushPromises()
+    const learnBtn = wrapper.find('.learn-btn')
+    expect(learnBtn.attributes('disabled')).toBeDefined()
+  })
+
+  it('Suchfeld ist initial leer', async () => {
+    const wrapper = mount(DeckList)
+    await flushPromises()
+    const searchInput = wrapper.find('input[placeholder="Karten durchsuchen..."]')
+    expect((searchInput.element as HTMLInputElement).value).toBe('')
+  })
+
+  it('zeigt beide Karten wenn Suchfeld leer ist', async () => {
+    const wrapper = mount(DeckList)
+    await flushPromises()
+    expect(wrapper.text()).toContain('Was ist Vue?')
+    expect(wrapper.text()).toContain('Was ist Java?')
   })
 })
