@@ -1,76 +1,94 @@
 <template>
   <div>
     <div v-if="learnMode">
-      <LearnMode :cards="filteredCards" @close="learnMode = false; loadCards()" @learned="loadCards()" />
+      <LearnMode :cards="cardsForLearn" @close="learnMode = false; loadCards()" @learned="loadCards()" />
     </div>
 
     <div v-else>
     <h2>Meine Karten:</h2>
 
-    <!-- Deck erstellen -->
-    <div class="create-form">
-      <input v-model="newDeckName" placeholder="Neues Deck (Name)" />
-      <button @click="createDeck">Deck erstellen</button>
+    <nav class="tabs">
+      <button :class="['tab-btn', { active: activeTab === 'learn' }]" @click="activeTab = 'learn'">Lernmodus</button>
+      <button :class="['tab-btn', { active: activeTab === 'manage' }]" @click="activeTab = 'manage'">Karten verwalten</button>
+    </nav>
+
+    <!-- Lernmodus -->
+    <div v-if="activeTab === 'learn'">
+      <div class="search-bar">
+        <select v-model="selectedDeckId">
+          <option :value="null">Alle Decks</option>
+          <option v-for="deck in decks" :key="deck.id" :value="deck.id">{{ deck.name }}</option>
+        </select>
+        <button :class="['filter-btn', { active: showOnlyUnlearned }]" @click="showOnlyUnlearned = !showOnlyUnlearned">
+          {{ showOnlyUnlearned ? 'Alle anzeigen' : 'Nur ungelernte' }}
+        </button>
+        <br />
+        <button class="learn-btn" @click="learnMode = true" :disabled="cardsForLearn.length === 0">🚀 Lernen starten</button>
+      </div>
     </div>
 
-    <!-- Karte erstellen -->
-    <div class="create-form">
-      <input v-model="newQuestion" placeholder="Frage" />
-      <input v-model="newAnswer" placeholder="Antwort" />
-      <select v-model="newCardDeckId">
-        <option :value="null">Kein Deck</option>
-        <option v-for="deck in decks" :key="deck.id" :value="deck.id">{{ deck.name }}</option>
-      </select>
-      <button @click="createCard">Karte erstellen</button>
+    <!-- Karten verwalten -->
+    <div v-else>
+      <!-- Deck erstellen -->
+      <div class="create-form">
+        <input v-model="newDeckName" placeholder="Neues Deck (Name)" />
+        <button @click="createDeck">Deck erstellen</button>
+      </div>
+
+      <!-- Karte erstellen -->
+      <div class="create-form">
+        <input v-model="newQuestion" placeholder="Frage" />
+        <input v-model="newAnswer" placeholder="Antwort" />
+        <select v-model="newCardDeckId">
+          <option :value="null">Kein Deck</option>
+          <option v-for="deck in decks" :key="deck.id" :value="deck.id">{{ deck.name }}</option>
+        </select>
+        <button @click="createCard">Karte erstellen</button>
+      </div>
+      <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
+
+      <!-- Suchfeld & Filter & Aktionen -->
+      <div class="search-bar">
+        <input v-model="searchTerm" placeholder="Karten durchsuchen..." />
+        <select v-model="selectedDeckId">
+          <option :value="null">Alle Decks</option>
+          <option v-for="deck in decks" :key="deck.id" :value="deck.id">{{ deck.name }}</option>
+        </select>
+        <button class="reset-btn" @click="resetAllLearned" :disabled="!cards.some(c => c.learned)">Fortschritt zurücksetzen</button>
+      </div>
+
+      <ul>
+        <li v-for="card in cardsForManage" :key="card.id" :class="{ learned: card.learned }">
+          <!-- Anzeigemodus -->
+          <template v-if="editingId !== card.id">
+            <strong>{{ card.question }}</strong> — {{ card.answer }}
+            <span v-if="card.learned" class="learned-label"> ✓ Gelernt</span>
+            <span v-if="card.deckId" class="deck-label"> 📂 {{ deckName(card.deckId) }}</span>
+            <div class="actions">
+              <button @click="toggleLearned(card)">
+                {{ card.learned ? 'Als ungelernt markieren' : 'Als gelernt markieren' }}
+              </button>
+              <button @click="startEdit(card)">Bearbeiten</button>
+              <button @click="deleteCard(card.id)" class="delete-btn">Löschen</button>
+            </div>
+          </template>
+
+          <!-- Bearbeitungsmodus -->
+          <template v-else>
+            <input v-model="editQuestion" placeholder="Frage" />
+            <input v-model="editAnswer" placeholder="Antwort" />
+            <select v-model="editDeckId">
+              <option :value="null">Kein Deck</option>
+              <option v-for="deck in decks" :key="deck.id" :value="deck.id">{{ deck.name }}</option>
+            </select>
+            <div class="actions">
+              <button @click="saveEdit(card)">Speichern</button>
+              <button @click="editingId = null">Abbrechen</button>
+            </div>
+          </template>
+        </li>
+      </ul>
     </div>
-    <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-
-    <!-- Suchfeld & Filter & Aktionen -->
-    <div class="search-bar">
-      <input v-model="searchTerm" placeholder="Karten durchsuchen..." />
-      <select v-model="selectedDeckId">
-        <option :value="null">Alle Decks</option>
-        <option v-for="deck in decks" :key="deck.id" :value="deck.id">{{ deck.name }}</option>
-      </select>
-      <button :class="['filter-btn', { active: showOnlyUnlearned }]" @click="showOnlyUnlearned = !showOnlyUnlearned">
-        {{ showOnlyUnlearned ? 'Alle anzeigen' : 'Nur ungelernte' }}
-      </button>
-      <br />
-      <button class="learn-btn" @click="learnMode = true" :disabled="filteredCards.length === 0">🚀 Lernen starten</button>
-      <button class="reset-btn" @click="resetAllLearned" :disabled="!cards.some(c => c.learned)">Fortschritt zurücksetzen</button>
-    </div>
-
-    <ul>
-      <li v-for="card in filteredCards" :key="card.id" :class="{ learned: card.learned }">
-        <!-- Anzeigemodus -->
-        <template v-if="editingId !== card.id">
-          <strong>{{ card.question }}</strong> — {{ card.answer }}
-          <span v-if="card.learned" class="learned-label"> ✓ Gelernt</span>
-          <span v-if="card.deckId" class="deck-label"> 📂 {{ deckName(card.deckId) }}</span>
-          <div class="actions">
-            <button @click="toggleLearned(card)">
-              {{ card.learned ? 'Als ungelernt markieren' : 'Als gelernt markieren' }}
-            </button>
-            <button @click="startEdit(card)">Bearbeiten</button>
-            <button @click="deleteCard(card.id)" class="delete-btn">Löschen</button>
-          </div>
-        </template>
-
-        <!-- Bearbeitungsmodus -->
-        <template v-else>
-          <input v-model="editQuestion" placeholder="Frage" />
-          <input v-model="editAnswer" placeholder="Antwort" />
-          <select v-model="editDeckId">
-            <option :value="null">Kein Deck</option>
-            <option v-for="deck in decks" :key="deck.id" :value="deck.id">{{ deck.name }}</option>
-          </select>
-          <div class="actions">
-            <button @click="saveEdit(card)">Speichern</button>
-            <button @click="editingId = null">Abbrechen</button>
-          </div>
-        </template>
-      </li>
-    </ul>
     </div>
   </div>
 </template>
@@ -89,6 +107,7 @@ const editAnswer = ref('')
 const learnMode = ref(false)
 const errorMessage = ref('')
 const showOnlyUnlearned = ref(false)
+const activeTab = ref<'learn' | 'manage'>('learn')
 
 const decks = ref<any[]>([])
 const newCardDeckId = ref<number | null>(null)
@@ -104,15 +123,27 @@ const deckName = (deckId: number) => {
 
 // Feste, id-basierte Sortierung: verhindert, dass Karten ihre Reihenfolge
 // wechseln, wenn das Backend sie nach einem Update in anderer Reihenfolge liefert.
-const filteredCards = computed(() =>
+
+// Kartenverwaltung: alle Karten, gefiltert per Suche & Deck-Auswahl
+const cardsForManage = computed(() =>
   cards.value
     .filter(c => {
       const matchesSearch =
         c.question.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
         c.answer.toLowerCase().includes(searchTerm.value.toLowerCase())
+      const matchesDeck = selectedDeckId.value !== null ? c.deckId === selectedDeckId.value : true
+      return matchesSearch && matchesDeck
+    })
+    .sort((a, b) => a.id - b.id)
+)
+
+// Lernmodus: Karten für die Lernsession, gefiltert per Deck-Auswahl & "Nur ungelernte"
+const cardsForLearn = computed(() =>
+  cards.value
+    .filter(c => {
       const matchesFilter = showOnlyUnlearned.value ? !c.learned : true
       const matchesDeck = selectedDeckId.value !== null ? c.deckId === selectedDeckId.value : true
-      return matchesSearch && matchesFilter && matchesDeck
+      return matchesFilter && matchesDeck
     })
     .sort((a, b) => a.id - b.id)
 )
@@ -208,6 +239,31 @@ const saveEdit = async (card: any) => {
 h2 {
   margin-bottom: 1rem;
   color: #1a1a1a;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #ddd;
+}
+
+.tab-btn {
+  background: none;
+  border-radius: 4px 4px 0 0;
+  padding: 0.6rem 1.2rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.tab-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.tab-btn.active {
+  color: #1e88e5;
+  border-bottom: 2px solid #1e88e5;
+  margin-bottom: -2px;
 }
 
 .create-form, .search-bar {

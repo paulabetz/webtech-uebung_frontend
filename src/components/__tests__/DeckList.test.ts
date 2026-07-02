@@ -13,6 +13,11 @@ const mockDecks = [
 
 let cardsState: typeof mockCards = []
 
+const goToManageTab = async (wrapper: ReturnType<typeof mount>) => {
+  const btn = wrapper.findAll('button').find(b => b.text() === 'Karten verwalten')
+  await btn?.trigger('click')
+}
+
 beforeEach(() => {
   cardsState = JSON.parse(JSON.stringify(mockCards))
   vi.stubGlobal('fetch', vi.fn((url: string, options?: any) => {
@@ -38,6 +43,7 @@ describe('DeckList', () => {
   it('zeigt alle Karten an', async () => {
     const wrapper = mount(DeckList)
     await flushPromises()
+    await goToManageTab(wrapper)
     expect(wrapper.text()).toContain('Was ist Vue?')
     expect(wrapper.text()).toContain('Was ist Java?')
   })
@@ -45,6 +51,7 @@ describe('DeckList', () => {
   it('filtert Karten per Suchfeld', async () => {
     const wrapper = mount(DeckList)
     await flushPromises()
+    await goToManageTab(wrapper)
     await wrapper.find('input[placeholder="Karten durchsuchen..."]').setValue('Vue')
     expect(wrapper.text()).toContain('Was ist Vue?')
     expect(wrapper.text()).not.toContain('Was ist Java?')
@@ -53,6 +60,7 @@ describe('DeckList', () => {
   it('zeigt gelernte Karten mit Häkchen an', async () => {
     const wrapper = mount(DeckList)
     await flushPromises()
+    await goToManageTab(wrapper)
     expect(wrapper.text()).toContain('✓ Gelernt')
   })
 
@@ -66,25 +74,26 @@ describe('DeckList', () => {
   it('zeigt Fehlermeldung bei leeren Feldern', async () => {
     const wrapper = mount(DeckList)
     await flushPromises()
-    await wrapper.find('button[onClick*="createCard"], button').trigger('click')
-    // Direkt createCard ohne Eingabe aufrufen
+    await goToManageTab(wrapper)
     const createBtn = wrapper.findAll('button').find(b => b.text() === 'Karte erstellen')
     await createBtn?.trigger('click')
     expect(wrapper.text()).toContain('dürfen nicht leer sein')
   })
 
-  it('filtert nur ungelernte Karten', async () => {
+  it('filtert nur ungelernte Karten für den Lernmodus', async () => {
     const wrapper = mount(DeckList)
     await flushPromises()
     const filterBtn = wrapper.findAll('button').find(b => b.text().includes('Nur ungelernte'))
     await filterBtn?.trigger('click')
+    await wrapper.find('.learn-btn').trigger('click')
     expect(wrapper.text()).toContain('Was ist Vue?')
-    expect(wrapper.text()).not.toContain('Was ist Java?')
+    expect(wrapper.text()).toContain('Karte 1 / 1')
   })
 
   it('zeigt Deck-Name bei Karte an', async () => {
     const wrapper = mount(DeckList)
     await flushPromises()
+    await goToManageTab(wrapper)
     expect(wrapper.text()).toContain('Programmierung')
   })
 
@@ -102,6 +111,7 @@ describe('DeckList', () => {
   it('Suchfeld ist initial leer', async () => {
     const wrapper = mount(DeckList)
     await flushPromises()
+    await goToManageTab(wrapper)
     const searchInput = wrapper.find('input[placeholder="Karten durchsuchen..."]')
     expect((searchInput.element as HTMLInputElement).value).toBe('')
   })
@@ -109,6 +119,7 @@ describe('DeckList', () => {
   it('zeigt beide Karten wenn Suchfeld leer ist', async () => {
     const wrapper = mount(DeckList)
     await flushPromises()
+    await goToManageTab(wrapper)
     expect(wrapper.text()).toContain('Was ist Vue?')
     expect(wrapper.text()).toContain('Was ist Java?')
   })
@@ -116,6 +127,7 @@ describe('DeckList', () => {
   it('Karten behalten nach dem Markieren als gelernt ihre feste Reihenfolge', async () => {
     const wrapper = mount(DeckList)
     await flushPromises()
+    await goToManageTab(wrapper)
 
     const questionsBefore = wrapper.findAll('li strong').map(el => el.text())
 
