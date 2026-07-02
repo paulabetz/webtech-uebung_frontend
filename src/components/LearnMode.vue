@@ -62,6 +62,7 @@ const markAndNext = async (markLearned: boolean) => {
     await fetch(`${baseUrl}/cards/${currentCard.value.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({
         question: currentCard.value.question,
         answer: currentCard.value.answer,

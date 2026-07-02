@@ -147,12 +147,12 @@ const cardsForLearn = computed(() =>
 )
 
 const loadCards = async () => {
-  const response = await fetch(`${baseUrl}/cards`)
+  const response = await fetch(`${baseUrl}/cards`, { credentials: 'include' })
   cards.value = await response.json()
 }
 
 const loadDecks = async () => {
-  const response = await fetch(`${baseUrl}/decks`)
+  const response = await fetch(`${baseUrl}/decks`, { credentials: 'include' })
   decks.value = await response.json()
 }
 
@@ -166,6 +166,7 @@ const createDeck = async () => {
   await fetch(`${baseUrl}/decks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({ name: newDeckName.value })
   })
   newDeckName.value = ''
@@ -181,6 +182,7 @@ const createCard = async () => {
   await fetch(`${baseUrl}/cards`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({ question: newQuestion.value, answer: newAnswer.value, learned: false, deckId: newCardDeckId.value })
   })
   newQuestion.value = ''
@@ -190,7 +192,7 @@ const createCard = async () => {
 }
 
 const deleteCard = async (id: number) => {
-  await fetch(`${baseUrl}/cards/${id}`, { method: 'DELETE' })
+  await fetch(`${baseUrl}/cards/${id}`, { method: 'DELETE', credentials: 'include' })
   await loadCards()
 }
 
@@ -198,6 +200,7 @@ const toggleLearned = async (card: any) => {
   await fetch(`${baseUrl}/cards/${card.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({ question: card.question, answer: card.answer, learned: !card.learned, deckId: card.deckId })
   })
   await loadCards()
@@ -216,6 +219,7 @@ const resetAllLearned = async () => {
     fetch(`${baseUrl}/cards/${card.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ question: card.question, answer: card.answer, learned: false, deckId: card.deckId })
     })
   ))
@@ -226,6 +230,7 @@ const saveEdit = async (card: any) => {
   await fetch(`${baseUrl}/cards/${card.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({ question: editQuestion.value, answer: editAnswer.value, learned: card.learned, deckId: editDeckId.value })
   })
   editingId.value = null
