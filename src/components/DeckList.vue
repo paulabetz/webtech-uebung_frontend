@@ -4,9 +4,7 @@
       <LearnMode :cards="cardsForLearn" @close="learnMode = false; loadCards()" @learned="loadCards()" />
     </div>
 
-    <div v-else>
-    <h2>Meine Karten:</h2>
-
+    <div v-else class="content">
     <nav class="tabs">
       <button :class="['tab-btn', { active: activeTab === 'learn' }]" @click="activeTab = 'learn'">Lernmodus</button>
       <button :class="['tab-btn', { active: activeTab === 'manage' }]" @click="activeTab = 'manage'">Karten verwalten</button>
@@ -236,16 +234,20 @@ const saveEdit = async (card: any) => {
 </script>
 
 <style scoped>
-h2 {
-  margin-bottom: 1rem;
-  color: #1a1a1a;
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 .tabs {
   display: flex;
+  justify-content: center;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
   border-bottom: 2px solid #ddd;
+  width: 100%;
 }
 
 .tab-btn {
@@ -269,8 +271,10 @@ h2 {
 .create-form, .search-bar {
   margin-bottom: 1rem;
   display: flex;
+  justify-content: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+  width: 100%;
 }
 
 input, select {
@@ -289,6 +293,9 @@ input:focus, select:focus {
 ul {
   list-style: none;
   padding: 0;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
 }
 
 li {
@@ -299,6 +306,7 @@ li {
   background: #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
   color: #1a1a1a;
+  text-align: left;
 }
 
 li.learned {
@@ -331,6 +339,7 @@ button {
   cursor: pointer;
   background-color: #e0e0e0;
   color: #1a1a1a;
+  font-size: 0.95rem;
 }
 
 button:hover {
@@ -349,8 +358,6 @@ button:hover {
 .learn-btn {
   background-color: #42a5f5;
   color: white;
-  font-size: 1rem;
-  padding: 0.5rem 1.2rem;
 }
 
 .learn-btn:hover {
